@@ -8,7 +8,7 @@ pipeline {
         SONAR_PROJECT_KEY = 'java-sonar-runner-simple'
         ENVIRONMENT_NAME = 'CI'
         }
-    stages{
+  stages{
    stage('Clone Repository') {
    steps {
         // Get some code from a GitHub repository
