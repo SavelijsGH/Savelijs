@@ -2,7 +2,6 @@ def repoName = "spring-petclinic"
 
 node {
 
-  stages{
    stage('Clone Repository') {
    steps {
         // Get some code from a GitHub repository
@@ -29,5 +28,4 @@ node {
         sh "docker run --name java-deploy-container --volumes-from maven-build-container -d -p 8080:8080 denisdbell/petclinic-deploy"
    }
    }
-}
 }
