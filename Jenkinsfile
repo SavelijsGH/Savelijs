@@ -2,30 +2,29 @@ def repoName = "spring-petclinic"
 
 node {
 
-   stage('Clone Repository') {
-   steps {
+    stage('Clone Repository') {
         // Get some code from a GitHub repository
         git 'https://github.com/denisdbell/spring-petclinic.git'
     
    }
-   }
+   stage('Build Maven Image') {
+        docker.build("maven-build }
    
    stage('Run Maven Container') {
-       steps {
+       
         //Remove maven-build-container if it exists
         sh " docker rm -f maven-build-container"
         
         //Run maven image
         sh "docker run --rm --name maven-build-container maven-build"
    }
-   }
    
    stage('Deploy Spring Boot Application') {
-        steps {
+        
          //Remove maven-build-container if it exists
         sh " docker rm -f java-deploy-container"
        
         sh "docker run --name java-deploy-container --volumes-from maven-build-container -d -p 8080:8080 denisdbell/petclinic-deploy"
    }
-   }
+
 }
