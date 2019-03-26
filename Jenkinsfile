@@ -1,3 +1,5 @@
+def repoName = "spring-petclinic"
+
 node {
 
   stages{
