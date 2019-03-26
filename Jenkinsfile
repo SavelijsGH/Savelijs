@@ -53,3 +53,4 @@ pipeline {
         sh "docker run --name java-deploy-container --volumes-from maven-build-container -d -p 8090:8080 denisdbell/petclinic-deploy"
    }
 }
+}
