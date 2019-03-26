@@ -21,27 +21,7 @@ pipeline {
                 sh "./mvnw clean install -DskipTests"
             }
         }
-        stage("Reference Application Unit Tests"){
-            steps{
-                echo 'This job runs unit tests on Java Spring reference application.'
-                sh "./mvnw test"
-            }  
-        }
-        stage("Reference Application Code Analysis"){
-            steps{
-                echo 'This job runs code quality analysis for Java reference application using SonarQube.'
-                echo "Checking the Build number $BUILD_NUMBER"
-                script{
-                    // requires SonarQube Scanner 2.8+
-                    scannerHome = tool 'ADOP SonarScanner'
-                    withSonarQubeEnv('ADOP Sonar') {
-                        echo "SONAR_PROJECT_NAME $env.SONAR_PROJECT_NAME"
-                        echo "SONAR_PROJECT_KEY $env.SONAR_PROJECT_KEY"
-                        sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectName=\"${env.SONAR_PROJECT_NAME}\" -Dsonar.projectKey=\"${env.SONAR_PROJECT_KEY}\" -Dsonar.projectVersion=1.0.$BUILD_NUMBER -Dsonar.sources=src/main/java -Dsonar.language=java -Dsonar.sourceEncoding=UTF-8 -Dsonar.scm.enabled=false -Dsonar.jacoco.reportPath=target/jacoco.exec"
-                    }
-                }
-            }
-        }
+
         stage("Reference Application Deploy"){
             steps{
                 echo 'This job deploys the java reference application to the CI environment.'
@@ -72,55 +52,7 @@ pipeline {
                 stash includes: '**/**', name: 'build-artefacts'
             }
         }
-        stage("Reference Application Regression Tests"){
-            steps{
-                echo 'This job runs regression tests on deployed java application.'
-                checkout scmGet("${SCM_URL}", "${SCM_NAMESPACE}", "${regRepo}", "${SCM_CREDENTIAL_ID}", 'master')
-                withMaven(maven: 'ADOP Maven') {
-                    sh '''
-                        export SERVICE_NAME="$(echo ${PROJECT_NAME} | tr \'/\' \'_\')_${ENVIRONMENT_NAME}"
-                        echo "SERVICE_NAME=${SERVICE_NAME}" > env.properties
-                        echo "Running automation tests"
-                        echo "Setting values for container, project and app names"
-                        CONTAINER_NAME="owasp_zap-"${SERVICE_NAME}${BUILD_NUMBER}
-                        
-                        APP_IP=$( docker inspect --format \'{{ .NetworkSettings.Networks.\'"$DOCKER_NETWORK_NAME"\'.IPAddress }}\' ${SERVICE_NAME} )
-                        APP_URL=http://${APP_IP}:8080/petclinic
-                        ZAP_PORT="9090"
-                    
-                        echo CONTAINER_NAME=$CONTAINER_NAME >> env.properties
-                        echo APP_URL=$APP_URL >> env.properties
-                        echo ZAP_PORT=$ZAP_PORT >> env.properties
-                    
-                        echo "Starting OWASP ZAP Intercepting Proxy"
-                        JOB_WORKSPACE_PATH="/var/lib/docker/volumes/jenkins_slave_home/_data/${PROJECT_NAME}/Reference_Application_Regression_Tests"
-                        echo JOB_WORKSPACE_PATH=$JOB_WORKSPACE_PATH >> env.properties
-                        mkdir -p ${JOB_WORKSPACE_PATH}/owasp_zap_proxy/test-results
-                        docker run -it -d --net=$DOCKER_NETWORK_NAME -v ${JOB_WORKSPACE_PATH}/owasp_zap_proxy/test-results/:/opt/zaproxy/test-results/ -e affinity:container==jenkins-slave --name ${CONTAINER_NAME} -P nhantd/owasp_zap start zap-test
 
-                        ZAP_IP=$( docker inspect --format \'{{ .NetworkSettings.Networks.\'"$DOCKER_NETWORK_NAME"\'.IPAddress }}\' ${CONTAINER_NAME} )
-                        echo "ZAP_IP =  $ZAP_IP"
-                        echo ZAP_IP=$ZAP_IP >> env.properties
-                        echo ZAP_ENABLED="true" >> env.properties
-                        echo "Running Selenium tests through maven."
-                        
-                        mvn clean -B test -DPETCLINIC_URL=${APP_URL} -DZAP_IP=${ZAP_IP} -DZAP_PORT=${ZAP_PORT} -DZAP_ENABLED=${ZAP_ENABLED}
-
-                        echo "Stopping OWASP ZAP Proxy and generating report."
-                        echo "Container ${CONTAINER_NAME}"
-                        docker stop ${CONTAINER_NAME}
-                        docker rm ${CONTAINER_NAME}
-                    
-                        docker run -i --net=$DOCKER_NETWORK_NAME -v ${JOB_WORKSPACE_PATH}/owasp_zap_proxy/test-results/:/opt/zaproxy/test-results/ -e affinity:container==jenkins-slave --name ${CONTAINER_NAME} -P nhantd/owasp_zap stop zap-test
-                        docker cp ${CONTAINER_NAME}:/opt/zaproxy/test-results/zap-test-report.html .
-                        sleep 10s
-                        docker rm ${CONTAINER_NAME}
-                    '''
-                }
-                cucumber fileIncludePattern: '', sortingMethod: 'ALPHABETICAL'
-                publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: '', reportFiles: 'zap-test-report.html', reportName: 'ZAP security test report', reportTitles: ''])
-            }
-        }
         stage("Reference Application Performance Tests"){
             steps{
                 echo 'This job run the Jmeter test for the java reference application.'
