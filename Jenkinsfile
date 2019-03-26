@@ -8,7 +8,7 @@ pipeline {
         SONAR_PROJECT_KEY = 'java-sonar-runner-simple'
         ENVIRONMENT_NAME = 'CI'
         }
-  stages{
+  
    stage('Clone Repository') {
    steps {
         // Get some code from a GitHub repository
@@ -58,5 +58,5 @@ pipeline {
         sh "docker run --name java-deploy-container --volumes-from maven-build-container -d -p 8090:8080 denisdbell/petclinic-deploy"
    }
    }
-}
+
 }
