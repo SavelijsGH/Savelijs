@@ -10,17 +10,19 @@ pipeline {
         ENVIRONMENT_NAME = 'CI'
         }
     stages{
-        stage("Reference Application Build"){
+        
             steps{
+                stage("Reference Application Build"){
                 echo 'This is a reference Java Application pipeline.'
                 deleteDir()
                 checkout scmGet("${SCM_URL}", "${SCM_NAMESPACE}", "${repoName}", "${SCM_CREDENTIAL_ID}", 'master')
                 sh "./mvnw clean install -DskipTests"
             }
+}
 
-
-        stage("Reference Application Deploy"){
+       
             steps{
+             stage("Reference Application Deploy"){
                 echo 'This job deploys the java reference application to the CI environment.'
                 sh '''
                     set -x
@@ -50,8 +52,9 @@ pipeline {
             }
         }
 
-        stage("Reference Application Performance Tests"){
+       
             steps{
+             stage("Reference Application Performance Tests"){
                 echo 'This job run the Jmeter test for the java reference application.'
                 unstash 'build-artefacts'
                 sh '''
@@ -79,8 +82,9 @@ pipeline {
                 publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "${WORKSPACE}/src/test/jmeter/", reportFiles: 'petclinic_test_plan.html', reportName: 'Jmeter Report', reportTitles: ''])
             }
         }
-        stage("Reference Application Deploy ProdA"){
+        
             steps{
+            stage("Reference Application Deploy ProdA"){
                 echo 'This job deploys the java reference application to the ProdA environment'
                 timeout(time:5, unit:'MINUTES') {
                     input('! Deploy to Prod A Environment?')
@@ -126,8 +130,9 @@ pipeline {
        
         sh "docker run --name java-deploy-container --volumes-from maven-build-container -d -p 8090:8080 denisdbell/petclinic-deploy"
    }
-        stage("Reference Application Deploy ProdB"){
+        
             steps{
+            stage("Reference Application Deploy ProdB"){
                 echo 'This job deploys the java reference application to the ProdB environment'
                 timeout(time:5, unit:'MINUTES') {
                     input('! Deploy to Prod B Environment?')
@@ -160,4 +165,3 @@ pipeline {
         }   
     }
   }
-}
