@@ -17,7 +17,7 @@ pipeline {
                 checkout scmGet("${SCM_URL}", "${SCM_NAMESPACE}", "${repoName}", "${SCM_CREDENTIAL_ID}", 'master')
                 sh "./mvnw clean install -DskipTests"
             }
-        }
+
 
         stage("Reference Application Deploy"){
             steps{
@@ -159,4 +159,5 @@ pipeline {
             }
         }   
     }
+  }
 }
